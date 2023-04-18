@@ -134,7 +134,7 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
     if batch_idx % args.print_freq == 0:
         print('[Training][%d/%d][%d/%d] \t Batch_time %.2f \t Batch_loss: %.4f \t lr1 : %0.5f '
               % (epoch, args.max_epoch, batch_idx, batch_num,
-                 batch_time, loss.item(), optimizer.get_lr()))
+                 batch_time, loss.item(), optimizer.get_lr_parameter(gcn.trainable_params())))
 
     # evaluate result of training phase
     relative_scores = group.inference(leaf_probs_2.asnumpy(), delta_2.asnumpy())

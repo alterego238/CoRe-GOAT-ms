@@ -36,6 +36,7 @@ def main():
 
     # run
     if args.test:
+        raise NotImplementedError()
         test_net(args)
     else:
         run_net(args)

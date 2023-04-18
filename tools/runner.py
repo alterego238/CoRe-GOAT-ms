@@ -91,7 +91,7 @@ def run_net(args):
         for _ in train_dataloader:
             len_train_dataloader += 1
         num_steps = len_train_dataloader * args.max_epoch'''
-        num_steps = train_dataset.get_dataset_size()
+        num_steps = train_dataset.get_dataset_size() * args.max_epoch
         cosine_decay_lr = nn.CosineDecayLR(min = 1e-8, max = args.lr, decay_steps=num_steps)
         #lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_steps)
 
@@ -110,20 +110,12 @@ def run_net(args):
             gcn.loadmodel(args.stage1_model_path)
         attn_encoder = Encoder_Blocks(args.qk_dim, 1024, args.linear_dim, args.num_heads, args.num_layers, args.attn_drop)
         linear_bp = Linear_For_Backbone(args)
-        if args.warmup:
-            optimizer = nn.Adam([
-                {'params': gcn.trainable_params(), 'lr': args.lr * args.lr_factor},
-                {'params': regressor.trainable_params()},
-                {'params': linear_bp.trainable_params()},
-                {'params': attn_encoder.trainable_params()}
-            ], learning_rate=cosine_decay_lr, weight_decay=args.weight_decay)
-        else:
-            optimizer = nn.Adam([
-                {'params': gcn.trainable_params(), 'lr': args.lr * args.lr_factor},
-                {'params': regressor.trainable_params()},
-                {'params': linear_bp.trainable_params()},
-                {'params': attn_encoder.trainable_params()}
-            ], learning_rate=args.lr, weight_decay=args.weight_decay)
+        optimizer = nn.Adam([
+            {'params': gcn.trainable_params(), 'lr': args.lr * args.lr_factor},
+            {'params': regressor.trainable_params()},
+            {'params': linear_bp.trainable_params()},
+            {'params': attn_encoder.trainable_params()}
+        ], learning_rate=cosine_decay_lr if args.warmup else args.lr, weight_decay=args.weight_decay)
         #scheduler = None
         if args.use_multi_gpu:
             raise NotImplementedError()
@@ -141,10 +133,7 @@ def run_net(args):
         gcn = None
         attn_encoder = None
         linear_bp = Linear_For_Backbone(args)
-        if args.warmup:
-            optimizer = nn.Adam([{'params': regressor.trainable_params()}, {'params': linear_bp.trainable_params()}], learning_rate=cosine_decay_lr, weight_decay=args.weight_decay)
-        else:
-            optimizer = nn.Adam([{'params': regressor.trainable_params()}, {'params': linear_bp.trainable_params()}], learning_rate=args.lr, weight_decay=args.weight_decay)
+        optimizer = nn.Adam([{'params': regressor.trainable_params()}, {'params': linear_bp.trainable_params()}], learning_rate=cosine_decay_lr if args.warmup else args.lr, weight_decay=args.weight_decay)
         #scheduler = None
         if args.use_multi_gpu:
             raise NotImplementedError()

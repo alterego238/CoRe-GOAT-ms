@@ -414,9 +414,16 @@ if __name__ == '__main__':
     parser.add_argument('--out_size', type=tuple, help='output image size', default=(25, 25))
     parser.add_argument('--random_select_frames', type=int, help='whether to select frames randomly', default=1)
 
+    parser.add_argument('--workers', type=int, default=24, help = 'number of workers')
+
     args = parser.parse_args()
 
-    train_dataset, test_dataset = dataset_builder(args)
+    from mindspore.dataset import GeneratorDataset
+    train_dataset_generator, test_dataset_generator = dataset_builder(args)
 
-    data = next(iter(train_dataset.create_dict_iterator()))
+    test_dataset = GeneratorDataset(test_dataset_generator, ["data", "target"], shuffle=False, num_parallel_workers=args.workers)
+    test_dataset = test_dataset.batch(batch_size=args.bs_test)
+    test_dataloader = test_dataset.create_tuple_iterator()
+    data = next(test_dataset.create_dict_iterator())
     print(data["data"].keys(), data["target"].keys())
+    print(next(test_dataloader))
