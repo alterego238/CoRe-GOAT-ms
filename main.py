@@ -9,7 +9,7 @@ import mindspore
 
 def main():
     # config
-    print(mindspore.communication.get_group_size())
+    # print(mindspore.communication.get_group_size())
     #torch.backends.cudnn.enabled = False
     args = parser.get_args()
     if args.benchmark == 'MTL':

@@ -10,7 +10,7 @@ import traceback
 import mindspore as ms
 import mindspore.nn as nn
 # model
-from models import I3D_backbone
+#from models import I3D_backbone
 from models import RegressTree
 # utils
 from utils.misc import import_class

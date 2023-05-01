@@ -256,8 +256,8 @@ def network_forward_test(base_model, regressor, pred_scores, feature_1, feature_
 def save_checkpoint(base_model, regressor, optimizer, epoch, epoch_best, rho_best, L2_min, RL2_min, exp_name, args):
     ms.save_checkpoint(append_dict={
         # 'base_model' : base_model.state_dict(),
-        'regressor': regressor.state_dict(),
-        'optimizer': optimizer.state_dict(),
+        'regressor': regressor.parameters_dict(),
+        'optimizer': optimizer.parameters_dict(),
         'epoch': epoch,
         'epoch_best': epoch_best,
         'rho_best': rho_best,

@@ -34,10 +34,16 @@ class MTLPair_Dataset:
         self.split = self.read_pickle(self.split_path)
         self.label_dict = self.read_pickle(self.label_path)
         self.feature_dict = self.read_pickle(self.feature_path)
-        self.cnn_feature_dict = self.read_pickle(self.cnn_feature_path)
+        '''self.feature_dict = dict()
+        for key, value in self.feature_dict_numpy.items():
+            self.feature_dict[key] = ms.Tensor.from_numpy(value)'''
+        #self.cnn_feature_dict = self.read_pickle(self.cnn_feature_path)
         self.formation_features_dict = pkl.load(open(args.formation_feature_path, 'rb'))
+        '''self.formation_features_dict = dict()
+        for key, value in self.formation_features_dict_numpy.items():
+            self.formation_features_dict[key] = ms.Tensor.from_numpy(value)'''
         self.bp_feature_path = args.bp_feature_path
-        self.boxes_dict = pkl.load(open(args.boxes_path, 'rb'))
+        #self.boxes_dict = pkl.load(open(args.boxes_path, 'rb'))
         self.data_root = args.data_root
         # setting
         self.temporal_shift = [args.temporal_shift_min, args.temporal_shift_max]
@@ -77,8 +83,8 @@ class MTLPair_Dataset:
         transforms = self.transforms
         image_list = sorted((glob.glob(os.path.join(frames_path, '*.jpg'))))
         if len(image_list) >= length:
-            start_frame = int(image_list[0].split("/")[-1][:-4])
-            end_frame = int(image_list[-1].split("/")[-1][:-4])
+            start_frame = int(image_list[0].split('/')[-1][:-4])
+            end_frame = int(image_list[-1].split('/')[-1][:-4])
             frame_list = np.linspace(start_frame, end_frame, length).astype(np.int)
             image_frame_idx = [frame_list[i] - start_frame for i in range(length)]
             video = [Image.open(image_list[image_frame_idx[i]]) for i in range(length)]
@@ -97,8 +103,8 @@ class MTLPair_Dataset:
         length = self.length
         image_list = sorted((glob.glob(os.path.join(frames_path, '*.jpg'))))
         if len(image_list) >= length:
-            start_frame = int(image_list[0].split("/")[-1][:-4])
-            end_frame = int(image_list[-1].split("/")[-1][:-4])
+            start_frame = int(image_list[0].split('/')[-1][:-4])
+            end_frame = int(image_list[-1].split('/')[-1][:-4])
             frame_list = np.linspace(start_frame, end_frame, length).astype(np.int)
             image_frame_idx = [frame_list[i] - start_frame for i in range(length)]
             return image_frame_idx
@@ -172,7 +178,7 @@ class MTLPair_Dataset:
             random_sample_list = random.sample(select_list_per_clip, num_selected_frames)
             selected_frames_list.extend([video[10 * i + j].unsqueeze(0) for j in random_sample_list])
             selected_frames_idx.extend([image_frame_idx[10 * i + j] for j in random_sample_list])
-        selected_frames = ops.concat(selected_frames_list, dim=0)  # 540*t,C,H,W; t=num_selected_frames
+        selected_frames = ops.concat(selected_frames_list, axis=0)  # 540*t,C,H,W; t=num_selected_frames
         return selected_frames, selected_frames_idx
 
     def select_middle_frames(self, video, image_frame_idx):
@@ -184,7 +190,7 @@ class MTLPair_Dataset:
             sample_list = [16 // (num_selected_frames + 1) * (j + 1) - 1 for j in range(num_selected_frames)]
             selected_frames_list.extend([video[10 * i + j].unsqueeze(0) for j in sample_list])
             selected_frames_idx.extend([image_frame_idx[10 * i + j] for j in sample_list])
-        selected_frames = ops.concat(selected_frames_list, dim=0)  # 540*t,C,H,W; t=num_selected_frames
+        selected_frames = ops.concat(selected_frames_list, axis=0)  # 540*t,C,H,W; t=num_selected_frames
         return selected_frames, selected_frames_idx
 
     def random_select_idx(self, image_frame_idx):
@@ -224,20 +230,22 @@ class MTLPair_Dataset:
                 else:
                     selected_frames_idx = self.select_middle_idx(image_frame_idx)
                 bp_features_list = [bp_features_ori[i].unsqueeze(0) for i in selected_frames_idx]  # [1,768]
-                data['bp_features'] = ops.concat(bp_features_list, dim=0).to(ms.float32)  # 540,768
+                data['bp_features'] = ops.concat(bp_features_list, axis=0).to(ms.float32)  # 540,768
             elif self.args.use_self:
                 data = data
             else:
                 # use group features
                 if self.args.use_cnn_features:
                     frames_path = os.path.join(self.data_root, key[0], str(key[1]))
-                    image_frame_idx = self.load_idx(frames_path)  # T,C,H,W
+                    '''image_frame_idx = self.load_idx(frames_path)  # T,C,H,W
                     if self.args.random_select_frames:
                         selected_frames_idx = self.random_select_idx(image_frame_idx)
                     else:
                         selected_frames_idx = self.select_middle_idx(image_frame_idx)
                     data['boxes'] = self.load_boxes(key, selected_frames_idx, self.out_size)  # 540*t,N,4
-                    data['cnn_features'] = self.cnn_feature_dict[key].squeeze(0)
+                    data['cnn_features'] = self.cnn_feature_dict[key].squeeze(0)'''
+                    data['boxes'] = np.random.random((540, 8, 4))  # T,N,4 
+                    data['cnn_features'] = np.random.random((540, 8, 1024)) #540*t,N,NFB
                 else:
                     frames_path = os.path.join(self.data_root, key[0], str(key[1]))
                     video, image_frame_idx = self.load_video(frames_path)  # T,C,H,W
@@ -278,7 +286,6 @@ class MTLPair_Dataset:
             choosen_sample_list = train_file_list[:self.voter_number]
             # goat
             data = self.load_goat_data(data, key)
-
             # exemplar
             target_list = []
             for item in choosen_sample_list:
@@ -293,7 +300,15 @@ class MTLPair_Dataset:
                 tmp = self.load_goat_data(tmp, item)
                 target_list.append(tmp)
 
-            return data, target_list
+            target = {}
+            target['feature'] = np.array([item['feature'] for item in target_list])
+            target['final_score'] = np.array([item['final_score'] for item in target_list])
+            target['difficulty'] = np.array([item['difficulty'] for item in target_list])
+            target['boxes'] = np.array([item['boxes'] for item in target_list])
+            target['cnn_features'] = np.array([item['cnn_features'] for item in target_list])
+
+            return data['feature'], data['final_score'], data['difficulty'], data['boxes'], data['cnn_features'
+                    ], target['feature'], target['final_score'], target['difficulty'], target['boxes'], target['cnn_features']
         else:
             # train phase
             data['feature'] = self.feature_dict[key]
@@ -323,7 +338,8 @@ class MTLPair_Dataset:
             # goat
             target = self.load_goat_data(target, sample_2)
 
-            return data, target
+            return data['feature'], data['final_score'], data['difficulty'], data['boxes'], data['cnn_features'
+                    ], target['feature'], target['final_score'], target['difficulty'], target['boxes'], target['cnn_features']
 
     def __len__(self):
         return len(self.dataset)
@@ -355,11 +371,11 @@ if __name__ == '__main__':
     def dataset_builder(args):
         try:
             train_trans, test_trans = get_video_trans()
-            DatasetGenerator = import_class("datasets." + args.benchmark)
+            DatasetGenerator = import_class('datasets.' + args.benchmark)
             train_dataset = DatasetGenerator(args, transform=train_trans, subset='train')
-            #train_dataset = GeneratorDataset(train_dataset_generator, ["data", "target"], num_parallel_workers=args.workers)
+            #train_dataset = GeneratorDataset(train_dataset_generator, ['data', 'target'], num_parallel_workers=args.workers)
             test_dataset = DatasetGenerator(args, transform=test_trans, subset='test')
-            #test_dataset = GeneratorDataset(test_dataset_generator, ["data", "target"], shuffle=False, num_workers=args.workers)
+            #test_dataset = GeneratorDataset(test_dataset_generator, ['data', 'target'], shuffle=False, num_workers=args.workers)
             return train_dataset, test_dataset
         except Exception as e:
             traceback.print_exc()
@@ -380,8 +396,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_self', type=int, help='whether to use self attention', default=0)
 
     # backbone features path
-    parser.add_argument('--i3d_feature_path', type=str, help='path of i3d feature dict', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/video_feature_dict.pkl')
-    parser.add_argument('--swin_feature_path', type=str, help='path of swin feature dict', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/video-swin-features/swin_features_dict_new.pkl')
+    parser.add_argument('--i3d_feature_path', type=str, help='path of i3d feature dict', default='/mnt/e/hjl/LOGO/file_for_logo/video_feature_dict_numpy.pkl')
+    parser.add_argument('--swin_feature_path', type=str, help='path of swin feature dict', default='/mnt/e/hjl/LOGO/file_for_logo/swin_features_dict_new_numpy.pkl')
     parser.add_argument('--bpbb_feature_path', type=str, help='path of bridge-prompt feature dict', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/bpbb_features_540.pkl')
 
     # bool for backbone[I3D / SWIN / BP]
@@ -392,7 +408,7 @@ if __name__ == '__main__':
     # attention features path
     parser.add_argument('--cnn_feature_path', type=str, help='path of cnn feature dict', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/Inceptionv3/inception_feature_dict.pkl')
     parser.add_argument('--bp_feature_path', type=str, default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/bp_features', help='bridge prompt feature path')
-    parser.add_argument('--formation_feature_path', type=str, default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/formation_features_middle_1.pkl', help='formation feature path')
+    parser.add_argument('--formation_feature_path', type=str, default='/mnt/e/hjl/LOGO/file_for_logo/formation_features_middle_1_numpy.pkl', help='formation feature path')
 
     # others
     parser.add_argument('--data_root', type=str, help='root of dataset', default='/mnt/petrelfs/daiwenxun/AS-AQA/Video_result')
@@ -402,9 +418,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--dive_number_choosing', type=bool, default=False)
     parser.add_argument('--usingDD', type=bool, default=False)
-    parser.add_argument('--label_path', type=str, help='path of annotation file', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/Anno_result/anno_dict.pkl')
-    parser.add_argument('--train_split', type=str, help='', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/Anno_result/train_split3.pkl')
-    parser.add_argument('--test_split', type=str, help='', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/Anno_result/test_split3.pkl')
+    parser.add_argument('--label_path', type=str, help='path of annotation file', default='/mnt/e/hjl/LOGO/file_for_logo/anno_dict.pkl')
+    parser.add_argument('--train_split', type=str, help='', default='/mnt/e/hjl/LOGO/file_for_logo/train_split3.pkl')
+    parser.add_argument('--test_split', type=str, help='', default='/mnt/e/hjl/LOGO/file_for_logo/test_split3.pkl')
     parser.add_argument('--boxes_path', type=str, help='path of boxes annotation file', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/DINO/ob_result_new.pkl')
     parser.add_argument('--temporal_shift_min', type=int, default=-3, help = '')
     parser.add_argument('--temporal_shift_max', type=int, default=3, help = '')
@@ -414,16 +430,65 @@ if __name__ == '__main__':
     parser.add_argument('--out_size', type=tuple, help='output image size', default=(25, 25))
     parser.add_argument('--random_select_frames', type=int, help='whether to select frames randomly', default=1)
 
-    parser.add_argument('--workers', type=int, default=24, help = 'number of workers')
+    parser.add_argument('--use_cnn_features', type=int, help='whether to use pretrained cnn features', default=1)
+
+    parser.add_argument('--workers', type=int, default=1, help = 'number of workers')
+
+    parser.add_argument('--bs_test', type=int, default=1, help = 'batch size of testing')
+    parser.add_argument('--bs_train', type=int, default=1, help = 'batch size of training')
 
     args = parser.parse_args()
 
     from mindspore.dataset import GeneratorDataset
     train_dataset_generator, test_dataset_generator = dataset_builder(args)
 
-    test_dataset = GeneratorDataset(test_dataset_generator, ["data", "target"], shuffle=False, num_parallel_workers=args.workers)
+    print('-' * 5 + 'train' + '-' * 5)
+    train_dataset_generator[0]
+
+    train_dataset = GeneratorDataset(train_dataset_generator, ['data_feature', 'data_final_score', 'data_difficulty', 'data_boxes', 'data_cnn_features', 
+                                'target_feature', 'target_final_score', 'target_difficulty', 'target_boxes', 'target_cnn_features'], shuffle=False, num_parallel_workers=args.workers)
+    train_dataset = train_dataset.batch(batch_size=args.bs_train)
+    train_dataloader = train_dataset.create_tuple_iterator()
+
+    data_get = next(iter(train_dataset.create_dict_iterator()))
+    for key, value in data_get.items():
+        print(key, value.shape)
+
+    '''data = {}
+    target = {}
+    data['feature'] = data_get['data_feature']
+    data['final_score'] = data_get['data_final_score']
+    data['difficulty'] = data_get['data_difficulty']
+    data['boxes'] = data_get['data_boxes']
+    data['cnn_features'] = data_get['data_cnn_features']
+    target['feature'] = data_get['target_feature']
+    target['final_score'] = data_get['target_final_score']
+    target['difficulty'] = data_get['target_difficulty']
+    target['boxes'] = data_get['target_boxes']
+    target['cnn_features'] = data_get['target_cnn_features']'''
+
+
+    print('-' * 5 + 'test' + '-' * 5)
+    test_dataset_generator[0]
+
+    test_dataset = GeneratorDataset(test_dataset_generator, ['data_feature', 'data_final_score', 'data_difficulty', 'data_boxes', 'data_cnn_features', 
+                                'target_feature', 'target_final_score', 'target_difficulty', 'target_boxes', 'target_cnn_features'], shuffle=False, num_parallel_workers=args.workers)
     test_dataset = test_dataset.batch(batch_size=args.bs_test)
     test_dataloader = test_dataset.create_tuple_iterator()
-    data = next(test_dataset.create_dict_iterator())
-    print(data["data"].keys(), data["target"].keys())
-    print(next(test_dataloader))
+
+    data_get = next(iter(test_dataset.create_dict_iterator()))
+    for key, value in data_get.items():
+        print(key, value.shape)
+
+    '''data = {}
+    data['feature'] = data_get['data_feature']
+    data['final_score'] = data_get['data_final_score']
+    data['difficulty'] = data_get['data_difficulty']
+    data['boxes'] = data_get['data_boxes']
+    data['cnn_features'] = data_get['data_cnn_features']'''
+    target_len = data_get['target_final_score'].shape[1]
+    target = [{'feature': data_get['target_feature'][:, i, :, :], 'final_score': data_get['target_final_score'][:, i], 'difficulty': data_get['target_difficulty'][:, i],
+               'boxes': data_get['target_boxes'][:, i, :, :], 'cnn_features': data_get['target_cnn_features'][:, i, :, :]} for i in range(target_len)]
+    print(type(target), len(target))
+    for item in target:
+        print(item)

@@ -62,13 +62,15 @@ def run_net(args):
                                             persistent_workers=True,
                                             seed=set_seed(args.seed))
     else:
-        train_dataset = GeneratorDataset(train_dataset_generator, ["data", "target"], num_parallel_workers=args.workers)
+        train_dataset = GeneratorDataset(train_dataset_generator, ['data_feature', 'data_final_score', 'data_difficulty', 'data_boxes', 'data_cnn_features', 
+                                'target_feature', 'target_final_score', 'target_difficulty', 'target_boxes', 'target_cnn_features'], shuffle=False, num_parallel_workers=args.workers)
         train_dataset = train_dataset.batch(batch_size=args.bs_train)
         train_dataloader = train_dataset.create_tuple_iterator()
         '''train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=args.bs_train,
                                                        shuffle=False, num_workers=int(args.workers),
                                                        pin_memory=True)'''
-    test_dataset = GeneratorDataset(test_dataset_generator, ["data", "target"], shuffle=False, num_parallel_workers=args.workers)
+    test_dataset = GeneratorDataset(test_dataset_generator, ['data_feature', 'data_final_score', 'data_difficulty', 'data_boxes', 'data_cnn_features', 
+                                'target_feature', 'target_final_score', 'target_difficulty', 'target_boxes', 'target_cnn_features'], shuffle=False, num_parallel_workers=args.workers)
     test_dataset = test_dataset.batch(batch_size=args.bs_test)
     test_dataloader = test_dataset.create_tuple_iterator()
     '''test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=args.bs_test,
@@ -92,7 +94,7 @@ def run_net(args):
             len_train_dataloader += 1
         num_steps = len_train_dataloader * args.max_epoch'''
         num_steps = train_dataset.get_dataset_size() * args.max_epoch
-        cosine_decay_lr = nn.CosineDecayLR(min = 1e-8, max = args.lr, decay_steps=num_steps)
+        cosine_decay_lr = nn.CosineDecayLR(min_lr = 1e-8, max_lr = args.lr, decay_steps=num_steps)
         #lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_steps)
 
     # Set models and optimizer(depend on whether to use goat)
@@ -196,10 +198,23 @@ def run_net(args):
             attn_encoder.set_train()
         # if args.fix_bn:
         #     base_model.apply(misc.fix_bn)  # fix bn
-        for idx, (data, target) in enumerate(train_dataloader):
+        for idx, data_get in enumerate(train_dataset.create_dict_iterator()):
             # break
             num_iter += 1
             opti_flag = False
+
+            data = {}
+            target = {}
+            data['feature'] = data_get['data_feature']
+            data['final_score'] = data_get['data_final_score']
+            data['difficulty'] = data_get['data_difficulty']
+            data['boxes'] = data_get['data_boxes']
+            data['cnn_features'] = data_get['data_cnn_features']
+            target['feature'] = data_get['target_feature']
+            target['final_score'] = data_get['target_final_score']
+            target['difficulty'] = data_get['target_difficulty']
+            target['boxes'] = data_get['target_boxes']
+            target['cnn_features'] = data_get['target_cnn_features']
 
             true_scores.extend(data['final_score'].asnumpy())
             # data preparing
@@ -279,9 +294,18 @@ def validate(base_model, regressor, test_dataset, epoch, optimizer, group, args,
     batch_num = test_dataset.get_dataset_size()
 
     datatime_start = time.time()
-    for batch_idx, (data, target) in enumerate(test_dataset.create_tuple_iterator(), 0):
+    for batch_idx, data_get in enumerate(test_dataset.create_dict_iterator(), 0):
         datatime = time.time() - datatime_start
         start = time.time()
+        data = {}
+        data['feature'] = data_get['data_feature']
+        data['final_score'] = data_get['data_final_score']
+        data['difficulty'] = data_get['data_difficulty']
+        data['boxes'] = data_get['data_boxes']
+        data['cnn_features'] = data_get['data_cnn_features']
+        target_len = data_get['target_final_score'].shape[1]
+        target = [{'feature': data_get['target_feature'][:, i, :, :], 'final_score': data_get['target_final_score'][:, i], 'difficulty': data_get['target_difficulty'][:, i],
+                'boxes': data_get['target_boxes'][:, i, :, :], 'cnn_features': data_get['target_cnn_features'][:, i, :, :]} for i in range(target_len)]
         true_scores.extend(data['final_score'].asnumpy())
         # data prepare
         if args.benchmark == 'MTL':
