@@ -490,5 +490,5 @@ if __name__ == '__main__':
     target = [{'feature': data_get['target_feature'][:, i, :, :], 'final_score': data_get['target_final_score'][:, i], 'difficulty': data_get['target_difficulty'][:, i],
                'boxes': data_get['target_boxes'][:, i, :, :], 'cnn_features': data_get['target_cnn_features'][:, i, :, :]} for i in range(target_len)]
     print(type(target), len(target))
-    for item in target:
-        print(item)
+    '''for item in target:
+        print(item)'''

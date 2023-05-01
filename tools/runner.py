@@ -205,32 +205,32 @@ def run_net(args):
 
             data = {}
             target = {}
-            data['feature'] = data_get['data_feature']
+            '''data['feature'] = data_get['data_feature']
             data['final_score'] = data_get['data_final_score']
-            data['difficulty'] = data_get['data_difficulty']
-            data['boxes'] = data_get['data_boxes']
-            data['cnn_features'] = data_get['data_cnn_features']
-            target['feature'] = data_get['target_feature']
+            data['difficulty'] = data_get['data_difficulty']'''
+            data['boxes'] = data_get['data_boxes'].float()
+            data['cnn_features'] = data_get['data_cnn_features'].float()
+            '''target['feature'] = data_get['target_feature']
             target['final_score'] = data_get['target_final_score']
-            target['difficulty'] = data_get['target_difficulty']
-            target['boxes'] = data_get['target_boxes']
-            target['cnn_features'] = data_get['target_cnn_features']
+            target['difficulty'] = data_get['target_difficulty']'''
+            target['boxes'] = data_get['target_boxes'].float()
+            target['cnn_features'] = data_get['target_cnn_features'].float()
 
-            true_scores.extend(data['final_score'].asnumpy())
+            true_scores.extend(data_get['data_final_score'].asnumpy())
             # data preparing
             # featue_1 is the test video ; video_2 is exemplar
             if args.benchmark == 'MTL':
-                feature_1 = data['feature'].float()  # N, C, T, H, W
+                feature_1 = data_get['data_feature'].float()  # N, C, T, H, W
                 if args.usingDD:
                     label_1 = data['completeness'].float().reshape(-1, 1)
                     label_2 = target['completeness'].float().reshape(-1, 1)
                 else:
-                    label_1 = data['final_score'].float().reshape(-1, 1)
-                    label_2 = target['final_score'].float().reshape(-1, 1)
+                    label_1 = data_get['data_final_score'].float().reshape(-1, 1)
+                    label_2 = data_get['target_final_score'].float().reshape(-1, 1)
                 if not args.dive_number_choosing and args.usingDD:
-                    assert (data['difficulty'] == target['difficulty']).all()
-                diff = data['difficulty'].float().reshape(-1, 1)
-                feature_2 = target['feature'].float()  # N, C, T, H, W
+                    assert (data_get['data_difficulty'] == data_get['target_difficulty']).all()
+                diff = data_get['data_difficulty'].float().reshape(-1, 1)
+                feature_2 = data_get['target_feature'].float()  # N, C, T, H, W
 
             else:
                 raise NotImplementedError()
