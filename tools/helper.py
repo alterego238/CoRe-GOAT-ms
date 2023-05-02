@@ -5,6 +5,7 @@ sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "../"))
 
 import mindspore as ms
+import mindspore.nn as nn
 import mindspore.ops as ops
 import time
 import numpy as np
@@ -15,7 +16,7 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
     
     start = time.time()
 
-    def forward_fn():
+    def forward_fn(feature_1, label_1, feature_2, label_2, data, target):
         loss = 0.0
 
         # TODO: theta
@@ -109,8 +110,8 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
         delta_1 = delta[:delta.shape[0] // 2]
         delta_2 = delta[delta.shape[0] // 2:]
         # loss
-        loss += nll(leaf_probs_1, glabel_1.argmax(0))
-        loss += nll(leaf_probs_2, glabel_2.argmax(0))
+        loss += nll(leaf_probs_1, glabel_1.argmax(0).int())
+        loss += nll(leaf_probs_2, glabel_2.argmax(0).int())
         for i in range(group.number_leaf()):
             mask = rlabel_1[i] >= 0
             if mask.sum() != 0:
@@ -118,10 +119,13 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
             mask = rlabel_2[i] >= 0
             if mask.sum() != 0:
                 loss += mse(delta_2[:, i][mask].reshape(-1, 1).float(), rlabel_2[i][mask].reshape(-1, 1).float())
+        #print(f'loss: {loss}, type: {type(loss)}')
         return loss, leaf_probs_2, delta_2
 
+
+    forward_fn(feature_1, label_1, feature_2, label_2, data, target)
     grad_fn = ms.value_and_grad(forward_fn, None, optimizer.parameters, has_aux=True)
-    (loss, leaf_probs_2, delta_2), grads = grad_fn()
+    (loss, leaf_probs_2, delta_2), grads = grad_fn(feature_1, label_1, feature_2, label_2, data, target)
     #loss = ops.depend(loss, optimizer(grads))
 
     if opti_flag:
@@ -131,6 +135,10 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
 
     end = time.time()
     batch_time = end - start
+    print(loss.item())
+    print('[Training][%d/%d][%d/%d] \t Batch_time %.2f \t Batch_loss: %.4f \t lr1 : %0.5f '
+              % (epoch, args.max_epoch, batch_idx, batch_num,
+                 batch_time, loss.item(), optimizer.get_lr()))
     if batch_idx % args.print_freq == 0:
         print('[Training][%d/%d][%d/%d] \t Batch_time %.2f \t Batch_loss: %.4f \t lr1 : %0.5f '
               % (epoch, args.max_epoch, batch_idx, batch_num,

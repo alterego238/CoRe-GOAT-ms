@@ -1,6 +1,7 @@
 import numpy as np
 import mindspore as ms
 import mindspore.nn as nn
+import mindspore.ops as ops
 
 from scipy import stats
 from tools import builder, helper
@@ -198,6 +199,7 @@ def run_net(args):
             attn_encoder.set_train()
         # if args.fix_bn:
         #     base_model.apply(misc.fix_bn)  # fix bn
+        print(train_dataset.get_dataset_size())
         for idx, data_get in enumerate(train_dataset.create_dict_iterator()):
             # break
             num_iter += 1
@@ -240,13 +242,26 @@ def run_net(args):
                 num_iter = 0
                 opti_flag = True
 
+            '''optimizer = nn.Adam(linear_bp.trainable_params(), 1e-2)
+            def forward_fn_test(feature_1, feature_2):
+                y = linear_bp(feature_1)  # B,540,1024
+                loss = mse(y, y)
+                print(y.shape)
+                return loss, y
+            
+            forward_fn_test(feature_1, feature_2)
+            grad_fn_test = ms.value_and_grad(forward_fn_test, None, optimizer.parameters, has_aux=True)
+            (loss, _), grads = grad_fn_test(feature_1, feature_2)'''
+
             helper.network_forward_train(base_model, regressor, pred_scores, feature_1, label_1, feature_2, label_2,
                                          diff, group, mse, nll, optimizer, opti_flag, epoch, idx + 1,
                                          train_dataset.get_dataset_size(), args, data, target, gcn, attn_encoder, device, linear_bp)
+            print(f'idx: {idx}')
 
             '''if args.warmup:
                 lr_scheduler.step()'''
 
+        print(f'epoch: {epoch + 1}')
         # analysis on results
         pred_scores = np.array(pred_scores)
         true_scores = np.array(true_scores)

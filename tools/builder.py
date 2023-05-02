@@ -15,11 +15,11 @@ from models import RegressTree
 # utils
 from utils.misc import import_class
 from utils.Group_helper import Group_helper
-from msvideo.data import transforms
+#from msvideo.data import transforms
 from mindspore.dataset import GeneratorDataset
 
 def get_video_trans():
-    train_trans = transforms.Compose([
+    '''train_trans = transforms.Compose([
         transforms.VideoRandomHorizontalFlip(),
         transforms.VideoResize((455,256)),
         transforms.VideoRandomCrop(224),
@@ -32,7 +32,8 @@ def get_video_trans():
         transforms.VideoToTensor(),
         transforms.VideoNormalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-    return train_trans, test_trans
+    return train_trans, test_trans'''
+    return None, None
 
 def dataset_builder(args):
     try:

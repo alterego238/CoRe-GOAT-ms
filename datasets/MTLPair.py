@@ -7,7 +7,7 @@ import random
 import glob
 # from os.path import join
 from PIL import Image
-from msvideo.data import transforms
+#from msvideo.data import transforms
 import pickle as pkl
 
 
@@ -63,11 +63,11 @@ class MTLPair_Dataset:
             self.dive_number_dict_test = {}
         self.preprocess()
         # transforms
-        self.transforms = transforms.Compose([
+        '''self.transforms = transforms.Compose([
             transforms.VideoResize(self.img_size),
             transforms.VideoToTensor(),
             transforms.VideoNormalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        ])'''
         # if self.usingDD:
 
         #     self.check()
@@ -353,6 +353,7 @@ if __name__ == '__main__':
     from utils.misc import import_class
     
     def get_video_trans():
+        return None, None
         train_trans = transforms.Compose([
             transforms.VideoRandomHorizontalFlip(),
             transforms.VideoResize((455,256)),
