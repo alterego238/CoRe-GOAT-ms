@@ -2,8 +2,8 @@ import pickle
 import mindspore
 from mindspore import Tensor
 
-pickle_path_numpy = '/mnt/e/hjl/LOGO/file_for_logo/video_feature_dict_numpy.pkl'
-pickle_path_ms = '/mnt/e/hjl/LOGO/file_for_logo/video_feature_dict_ms.pkl'
+pickle_path_numpy = '/mnt/disk_1/jiale_internfile_for_logo/video_feature_dict_numpy.pkl'
+pickle_path_ms = '/mnt/disk_1/jiale_internfile_for_logo/video_feature_dict_ms.pkl'
 
 pickle_data_ms = dict()
 

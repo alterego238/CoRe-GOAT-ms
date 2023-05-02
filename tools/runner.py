@@ -199,7 +199,7 @@ def run_net(args):
             attn_encoder.set_train()
         # if args.fix_bn:
         #     base_model.apply(misc.fix_bn)  # fix bn
-        print(train_dataset.get_dataset_size())
+
         for idx, data_get in enumerate(train_dataset.create_dict_iterator()):
             # break
             num_iter += 1
@@ -256,12 +256,10 @@ def run_net(args):
             helper.network_forward_train(base_model, regressor, pred_scores, feature_1, label_1, feature_2, label_2,
                                          diff, group, mse, nll, optimizer, opti_flag, epoch, idx + 1,
                                          train_dataset.get_dataset_size(), args, data, target, gcn, attn_encoder, device, linear_bp)
-            print(f'idx: {idx}')
 
             '''if args.warmup:
                 lr_scheduler.step()'''
 
-        print(f'epoch: {epoch + 1}')
         # analysis on results
         pred_scores = np.array(pred_scores)
         true_scores = np.array(true_scores)

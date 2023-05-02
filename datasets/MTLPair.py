@@ -397,8 +397,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_self', type=int, help='whether to use self attention', default=0)
 
     # backbone features path
-    parser.add_argument('--i3d_feature_path', type=str, help='path of i3d feature dict', default='/mnt/e/hjl/LOGO/file_for_logo/video_feature_dict_numpy.pkl')
-    parser.add_argument('--swin_feature_path', type=str, help='path of swin feature dict', default='/mnt/e/hjl/LOGO/file_for_logo/swin_features_dict_new_numpy.pkl')
+    parser.add_argument('--i3d_feature_path', type=str, help='path of i3d feature dict', default='/mnt/disk_1/jiale_intern/file_for_logo/video_feature_dict_numpy.pkl')
+    parser.add_argument('--swin_feature_path', type=str, help='path of swin feature dict', default='/mnt/disk_1/jiale_intern/file_for_logo/swin_features_dict_new_numpy.pkl')
     parser.add_argument('--bpbb_feature_path', type=str, help='path of bridge-prompt feature dict', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/bpbb_features_540.pkl')
 
     # bool for backbone[I3D / SWIN / BP]
@@ -409,7 +409,7 @@ if __name__ == '__main__':
     # attention features path
     parser.add_argument('--cnn_feature_path', type=str, help='path of cnn feature dict', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/Inceptionv3/inception_feature_dict.pkl')
     parser.add_argument('--bp_feature_path', type=str, default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/AS-AQA/bp_features', help='bridge prompt feature path')
-    parser.add_argument('--formation_feature_path', type=str, default='/mnt/e/hjl/LOGO/file_for_logo/formation_features_middle_1_numpy.pkl', help='formation feature path')
+    parser.add_argument('--formation_feature_path', type=str, default='/mnt/disk_1/jiale_intern/file_for_logo/formation_features_middle_1_numpy.pkl', help='formation feature path')
 
     # others
     parser.add_argument('--data_root', type=str, help='root of dataset', default='/mnt/petrelfs/daiwenxun/AS-AQA/Video_result')
@@ -419,9 +419,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--dive_number_choosing', type=bool, default=False)
     parser.add_argument('--usingDD', type=bool, default=False)
-    parser.add_argument('--label_path', type=str, help='path of annotation file', default='/mnt/e/hjl/LOGO/file_for_logo/anno_dict.pkl')
-    parser.add_argument('--train_split', type=str, help='', default='/mnt/e/hjl/LOGO/file_for_logo/train_split3.pkl')
-    parser.add_argument('--test_split', type=str, help='', default='/mnt/e/hjl/LOGO/file_for_logo/test_split3.pkl')
+    parser.add_argument('--label_path', type=str, help='path of annotation file', default='/mnt/disk_1/jiale_intern/file_for_logo/anno_dict.pkl')
+    parser.add_argument('--train_split', type=str, help='', default='/mnt/disk_1/jiale_intern/file_for_logo/train_split3.pkl')
+    parser.add_argument('--test_split', type=str, help='', default='/mnt/disk_1/jiale_intern/file_for_logo/test_split3.pkl')
     parser.add_argument('--boxes_path', type=str, help='path of boxes annotation file', default='/mnt/petrelfs/daiwenxun/AS-AQA/Exp/DINO/ob_result_new.pkl')
     parser.add_argument('--temporal_shift_min', type=int, default=-3, help = '')
     parser.add_argument('--temporal_shift_max', type=int, default=3, help = '')

@@ -34,6 +34,9 @@ def main():
         print(args)'''
     print(args)
 
+    '''from mindspore import context
+    context.set_context(device_target='GPU')'''
+
     # run
     if args.test:
         raise NotImplementedError()
