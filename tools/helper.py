@@ -123,7 +123,7 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
         return loss, leaf_probs_2, delta_2
 
 
-    forward_fn(feature_1, label_1, feature_2, label_2, data, target)
+    #forward_fn(feature_1, label_1, feature_2, label_2, data, target)
     grad_fn = ms.value_and_grad(forward_fn, None, optimizer.parameters, has_aux=True)
     (loss, leaf_probs_2, delta_2), grads = grad_fn(feature_1, label_1, feature_2, label_2, data, target)
     #loss = ops.depend(loss, optimizer(grads))
@@ -135,9 +135,9 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
 
     end = time.time()
     batch_time = end - start
-    print('[Training][%d/%d][%d/%d] \t Batch_time %.2f \t Batch_loss: %.4f \t lr1 : %0.5f '
+    '''print('[Training][%d/%d][%d/%d] \t Batch_time %.2f \t Batch_loss: %.4f \t lr1 : %0.5f '
               % (epoch, args.max_epoch, batch_idx, batch_num,
-                 batch_time, loss.asnumpy().item(), optimizer.get_lr()[0]))
+                 batch_time, loss.asnumpy().item(), optimizer.get_lr()[0]))'''
     if batch_idx % args.print_freq == 0:
         print('[Training][%d/%d][%d/%d] \t Batch_time %.2f \t Batch_loss: %.4f \t lr1 : %0.5f '
               % (epoch, args.max_epoch, batch_idx, batch_num,
@@ -154,7 +154,7 @@ def network_forward_train(base_model, regressor, pred_scores, feature_1, label_1
         score = relative_scores + label_2
     else:
         raise NotImplementedError()
-    pred_scores.extend([i.item() for i in score])
+    pred_scores.extend([i.asnumpy().item() for i in score])
 
 
 def network_forward_test(base_model, regressor, pred_scores, feature_1, feature_2_list, label_2_list, diff, group,
@@ -257,7 +257,7 @@ def network_forward_test(base_model, regressor, pred_scores, feature_1, feature_
                 score += relative_scores + label_2
         else:
             raise NotImplementedError()
-    pred_scores.extend([i.item() / len(feature_2_list) for i in score])
+    pred_scores.extend([i.asnumpy().item() / len(feature_2_list) for i in score])
 
 
 def save_checkpoint(base_model, regressor, optimizer, epoch, epoch_best, rho_best, L2_min, RL2_min, exp_name, args):

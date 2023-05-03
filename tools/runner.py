@@ -201,7 +201,6 @@ def run_net(args):
         #     base_model.apply(misc.fix_bn)  # fix bn
 
         for idx, data_get in enumerate(train_dataset.create_dict_iterator()):
-            # break
             num_iter += 1
             opti_flag = False
 
@@ -271,7 +270,7 @@ def run_net(args):
             print('[Training] EPOCH: %d, correlation: %.4f, L2: %.4f, RL2: %.4f, lr1: %.4f' % (
                 epoch, rho, L2, RL2, optimizer.param_groups[0]['lr']))'''
         print('[Training] EPOCH: %d, correlation: %.4f, L2: %.4f, RL2: %.4f, lr1: %.4f' % (
-                epoch, rho, L2, RL2, optimizer.get_lr()))
+                epoch, rho, L2, RL2, optimizer.get_lr()[0]))
 
         '''if is_main_process():
             validate(base_model, regressor, test_dataloader, epoch, optimizer, group, args, gcn, attn_encoder, device, linear_bp)
@@ -314,11 +313,11 @@ def validate(base_model, regressor, test_dataset, epoch, optimizer, group, args,
         data['feature'] = data_get['data_feature']
         data['final_score'] = data_get['data_final_score']
         data['difficulty'] = data_get['data_difficulty']
-        data['boxes'] = data_get['data_boxes']
-        data['cnn_features'] = data_get['data_cnn_features']
+        data['boxes'] = data_get['data_boxes'].float()
+        data['cnn_features'] = data_get['data_cnn_features'].float()
         target_len = data_get['target_final_score'].shape[1]
         target = [{'feature': data_get['target_feature'][:, i, :, :], 'final_score': data_get['target_final_score'][:, i], 'difficulty': data_get['target_difficulty'][:, i],
-                'boxes': data_get['target_boxes'][:, i, :, :], 'cnn_features': data_get['target_cnn_features'][:, i, :, :]} for i in range(target_len)]
+                'boxes': data_get['target_boxes'][:, i, :, :].float(), 'cnn_features': data_get['target_cnn_features'][:, i, :, :].float()} for i in range(target_len)]
         true_scores.extend(data['final_score'].asnumpy())
         # data prepare
         if args.benchmark == 'MTL':
@@ -343,31 +342,32 @@ def validate(base_model, regressor, test_dataset, epoch, optimizer, group, args,
                     % (epoch, args.max_epoch, batch_idx, batch_num, batch_time, datatime))
         datatime_start = time.time()
 
-        # analysis on results
-        pred_scores = np.array(pred_scores)
-        true_scores = np.array(true_scores)
-        rho, p = stats.spearmanr(pred_scores, true_scores)
-        L2 = np.power(pred_scores - true_scores, 2).sum() / true_scores.shape[0]
-        RL2 = np.power((pred_scores - true_scores) / (true_scores.max() - true_scores.min()), 2).sum() / \
-              true_scores.shape[0]
-        if L2_min > L2:
-            L2_min = L2
-        if RL2_min > RL2:
-            RL2_min = RL2
-        if rho > rho_best:
-            rho_best = rho
-            epoch_best = epoch
-            print('-----New best found!-----')
-            helper.save_outputs(pred_scores, true_scores, args)
-            helper.save_checkpoint(base_model, regressor, optimizer, epoch, epoch_best, rho_best, L2_min, RL2_min,
-                                    'best', args)
-        if epoch == args.max_epoch - 1:
-            log_best(rho_best, RL2_min, epoch_best, args)
+    # analysis on results
+    pred_scores = np.array(pred_scores)
+    true_scores = np.array(true_scores)
+    rho, p = stats.spearmanr(pred_scores, true_scores)
+    L2 = np.power(pred_scores - true_scores, 2).sum() / true_scores.shape[0]
+    RL2 = np.power((pred_scores - true_scores) / (true_scores.max() - true_scores.min()), 2).sum() / \
+            true_scores.shape[0]
+    if L2_min > L2:
+        L2_min = L2
+    if RL2_min > RL2:
+        RL2_min = RL2
+    if rho > rho_best:
+        rho_best = rho
+        epoch_best = epoch
+        print('-----New best found!-----')
+        # helper.save_outputs(pred_scores, true_scores, args)
+        # helper.save_checkpoint(base_model, regressor, optimizer, epoch, epoch_best, rho_best, L2_min, RL2_min,
+        #                        'best', args)
+    if epoch == args.max_epoch - 1:
+        log_best(rho_best, RL2_min, epoch_best, args)
 
-        print('[TEST] EPOCH: %d, correlation: %.6f, L2: %.6f, RL2: %.6f' % (epoch, rho, L2, RL2))
+    print('[TEST] EPOCH: %d, correlation: %.6f, L2: %.6f, RL2: %.6f' % (epoch, rho, L2, RL2))
 
 
 def test(base_model, regressor, test_dataset, group, args, gcn, attn_encoder, device):
+    raise NotImplementedError
     global use_gpu
     true_scores = []
     pred_scores = []
